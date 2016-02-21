@@ -1,0 +1,15 @@
+<extensions>
+	<details>
+		<title lang="EN">22tracks Plugin</title>
+	</details>
+	<plugins>
+		<plugin name="22tracks" version="0.1.0" minTarget="7.5" maxTarget="*">
+			<title lang="EN">22tracks</title>
+			<desc lang="EN">Play music from 22tracks.com</desc>
+			<url>http://danielvijge.github.io/squeezebox-22tracks/squeezebox-22tracks-0.1.0.zip</url>
+			<link>https://github.com/danielvijge/squeezebox-22tracks</link>
+			<sha>c4f33688b06a6786d6615213f51a88d1c456dd51</sha>
+			<creator>Daniel Vijge</creator>
+		</plugin>
+	</plugins>
+</extensions>
