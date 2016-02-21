@@ -23,7 +23,6 @@ use Slim::Utils::Prefs;
 use Slim::Utils::Log;
 use Slim::Utils::Cache;
 
-use Data::Dumper;
 use Plugins::22tracks::ProtocolHandler;
 
 # Defines the timeout in seconds for a http request
@@ -275,7 +274,7 @@ sub _makeMetadata {
         artist => $json->{'artist'},
         album => $json->{'original_genre'}->{'title'},
         play => "tracks22://" . $json->{'id'},
-        bitrate => '128k',
+        bitrate => '128kbps CBR',
         type => 'MP3 (22tracks)',
         on_select => 'play',
         icon => $icon,
@@ -312,8 +311,6 @@ sub trackInfoMenuBio {
 
     my @menuBio;
     my $item;
-
-    $log->debug(Dumper($meta));
 
     if ($meta->{'bio'}) {
         push @menuBio, {
