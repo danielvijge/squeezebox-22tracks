@@ -93,9 +93,12 @@ sub initPlugin {
         tracks22 => 'Plugins::22tracks::ProtocolHandler'
     );
 
-    Slim::Menu::TrackInfo->registerInfoProvider( tracks22 => (
-        after => 'middle',
-        func  => \&trackInfoMenu,
+    Slim::Menu::TrackInfo->registerInfoProvider( tracks22bio => (
+        func  => \&trackInfoMenuBio,
+    ) );
+
+    Slim::Menu::TrackInfo->registerInfoProvider( tracks22playlist => (
+        func  => \&trackInfoMenuPlaylist,
     ) );
 }
 
@@ -129,6 +132,7 @@ sub _feedHandler {
     my $hide = exists $passDict->{'hide'} ? $passDict->{'hide'} : "-1";
     my $allcities = exists $passDict->{'allcities'} ? $passDict->{'allcities'} : "0";
     my $icon = exists $passDict->{'icon'} ? $passDict->{'icon'} : '';
+    my $playlist_info = exists $passDict->{'playlist_info'} ? $passDict->{'playlist_info'} : '';
 
     my $queryUrl = API_BASE_URL;
 
@@ -156,7 +160,7 @@ sub _feedHandler {
                     _parseGenres($json, $menu, $allcities);
                 }
                 elsif ($resource eq 'tracks') {
-                    _parseTracks($json, $menu, $icon);
+                    _parseTracks($json, $menu, $icon, $playlist_info);
                 }
 
                 $callback->({
@@ -227,7 +231,7 @@ sub _parseGenre {
             image => $icon,
             type => 'playlist',
             url => \&_feedHandler,
-            passthrough => [ { resource => 'tracks', id => $json->{'id'}, icon => $icon } ]
+            passthrough => [ { resource => 'tracks', id => $json->{'id'}, icon => $icon, playlist_info => $json->{'description_html'} } ]
         };
     }
     else {
@@ -254,15 +258,15 @@ sub getIcon {
 }
 
 sub _parseTracks {
-    my ($json, $menu, $icon) = @_;
+    my ($json, $menu, $icon, $playlist_info) = @_;
 
     for my $entry (@$json) {
-        push @$menu, _makeMetadata($entry, $icon);
+        push @$menu, _makeMetadata($entry, $icon, $playlist_info);
     }
 }
 
 sub _makeMetadata {
-    my ($json, $icon) = @_;
+    my ($json, $icon, $playlist_info) = @_;
     
     my $DATA = {
         duration => int($json->{'duration'}),
@@ -277,7 +281,8 @@ sub _makeMetadata {
         icon => $icon,
         image => $icon,
         cover => $icon,
-        bio => $json->{'bio'}
+        bio => $json->{'bio'},
+        playlist_info => $playlist_info
     };
 
     # Already set meta cache here, so that playlist does not have to
@@ -299,28 +304,55 @@ sub defaultMeta {
     };
 }
 
-sub trackInfoMenu {
+sub trackInfoMenuBio {
     my ($client, $url, $track, $meta) = @_;
-
-    $log->debug('Track info menu');
     
     return unless $client;
     return unless $url =~ m{^tracks22://};
 
-    my @menu;
+    my @menuBio;
     my $item;
 
+    $log->debug(Dumper($meta));
+
     if ($meta->{'bio'}) {
-        push @menu, {
+        push @menuBio, {
                 name        => $meta->{'bio'},
-                type        => 'text',
+                type        => 'textarea',
                 favorites   => 0,
         };
-
-        if (scalar @menu) {
+        
+        if (scalar @menuBio) {
             $item = {
                 name  => string('PLUGIN_22TRACKS_BIO'),
-                items => \@menu,
+                items => \@menuBio,
+            };
+        }
+    }
+
+    return $item;
+}
+
+sub trackInfoMenuPlaylist {
+    my ($client, $url, $track, $meta) = @_;
+    
+    return unless $client;
+    return unless $url =~ m{^tracks22://};
+
+    my @menuPlaylist;
+    my $item;
+
+    if ($meta->{'playlist_info'}) {
+        push @menuPlaylist, {
+                name        => $meta->{'playlist_info'},
+                type        => 'textarea',
+                favorites   => 0,
+        };
+        
+        if (scalar @menuPlaylist) {
+            $item = {
+                name  => string('PLUGIN_22TRACKS_PLAYLIST_INFO'),
+                items => \@menuPlaylist,
             };
         }
     }

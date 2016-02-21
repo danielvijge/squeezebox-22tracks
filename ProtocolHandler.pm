@@ -56,7 +56,9 @@ sub _makeMetadata {
         type => 'mp3 (22tracks)',
         icon => $icon,
         image => $icon,
-        cover => $icon
+        cover => $icon,
+        bio => $json->{'track'}->{'bio'},
+        playlist_info => $json->{'genre'}->{'description_html'}
     };
 }
 
