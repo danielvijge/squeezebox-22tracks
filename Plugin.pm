@@ -92,6 +92,11 @@ sub initPlugin {
     Slim::Player::ProtocolHandlers->registerHandler(
         tracks22 => 'Plugins::22tracks::ProtocolHandler'
     );
+
+    Slim::Menu::TrackInfo->registerInfoProvider( tracks22 => (
+        after => 'middle',
+        func  => \&trackInfoMenu,
+    ) );
 }
 
 # Called when the plugin is stopped
@@ -271,7 +276,8 @@ sub _makeMetadata {
         on_select => 'play',
         icon => $icon,
         image => $icon,
-        cover => $icon
+        cover => $icon,
+        bio => $json->{'bio'}
     };
 
     # Already set meta cache here, so that playlist does not have to
@@ -291,6 +297,35 @@ sub defaultMeta {
     return {
         title => Slim::Music::Info::getCurrentTitle($url)
     };
+}
+
+sub trackInfoMenu {
+    my ($client, $url, $track, $meta) = @_;
+
+    $log->debug('Track info menu');
+    
+    return unless $client;
+    return unless $url =~ m{^tracks22://};
+
+    my @menu;
+    my $item;
+
+    if ($meta->{'bio'}) {
+        push @menu, {
+                name        => $meta->{'bio'},
+                type        => 'text',
+                favorites   => 0,
+        };
+
+        if (scalar @menu) {
+            $item = {
+                name  => string('PLUGIN_22TRACKS_BIO'),
+                items => \@menu,
+            };
+        }
+    }
+
+    return $item;
 }
 
 # Always end with a 1 to make Perl happy

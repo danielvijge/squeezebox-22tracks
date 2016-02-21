@@ -190,19 +190,6 @@ sub new {
     return $sock;
 }
 
-
-# Track Info menu
-sub trackInfo {
-    my ( $class, $client, $track ) = @_;
-    my $url = $track->url;
-}
-
-# Track Info menu
-sub trackInfoURL {
-    my ( $class, $client, $url ) = @_;
-    $log->info("trackInfoURL: " . $url);
-}
-
 # Metadata for a URL, used by CLI/JSON clients
 sub getMetadataFor {
     my ( $class, $client, $url ) = @_;
