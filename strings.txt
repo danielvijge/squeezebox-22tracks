@@ -1,0 +1,20 @@
+PLUGIN_22TRACKS
+	EN	22tracks
+
+PLUGIN_22TRACKS_DESC
+	EN	Play music from 22tracks.com
+
+PLUGIN_22TRACKS_ERROR
+	EN	Error
+
+PLUGIN_22TRACKS_NO_INFO
+	EN	No info for tracks
+
+PLUGIN_22TRACKS_DEFAULT_CITY
+	EN	Default location
+
+PLUGIN_22TRACKS_DEFAULT_CITY_DESC
+	EN	Default location when opening 22tracks
+
+PLUGIN_22TRACKS_ALL_CITIES
+	EN	All locations

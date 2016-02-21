@@ -1,0 +1,17 @@
+[% PROCESS settings/header.html %]
+
+
+	[% WRAPPER setting title="PLUGIN_22TRACKS_DEFAULT_CITY" desc="PLUGIN_22TRACKS_DEFAULT_CITY_DESC" %]
+	<div class="prefDesc">
+		<select name="pref_defaultCity" class="stdedit">
+				<option value="0"[% IF prefs.defaultCity == '0' %] selected[% END %]>All locations</option>
+				<option value="1"[% IF prefs.defaultCity == '1' %] selected[% END %]>Amsterdam</option>
+				<option value="2"[% IF prefs.defaultCity == '2' %] selected[% END %]>Brussels</option>
+				<option value="3"[% IF prefs.defaultCity == '3' %] selected[% END %]>London</option>
+				<option value="4"[% IF prefs.defaultCity == '4' %] selected[% END %]>Paris</option>
+		</select>
+	</div>
+
+	[% END %]
+
+[% PROCESS settings/footer.html %]

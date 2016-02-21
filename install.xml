@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<extension>
+	<name>PLUGIN_22TRACKS</name>
+	<module>Plugins::22tracks::Plugin</module>
+	<version>0.1.0</version>
+	<description>PLUGIN_22TRACKS_DESC</description>
+	<icon>plugins/22tracks/icon.png</icon>
+	<defaultState>enabled</defaultState>
+	<targetApplication>
+		<id>SlimServer</id>
+		<minVersion>7.5</minVersion>
+        	<maxVersion>7.*</maxVersion>
+	</targetApplication>
+  	<optionsURL>plugins/22tracks/settings/basic.html</optionsURL>
+  	<creator>Daniel Vijge</creator>
+  	<email>spam+squeezebox@vijge.net</email>
+</extension>
