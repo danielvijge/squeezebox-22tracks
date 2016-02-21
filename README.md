@@ -1,8 +1,8 @@
-# A 22Tracks plugin for Logitech SqueezeBox media server #
+# A 22tracks plugin for Logitech SqueezeBox media server #
 
 This is a Logitech Media Server (LMS) (a.k.a Squeezebox server) plugin to play
-tracks from 22Tracks. To install, use the settings page of Logitech Media server.
-Go to the _Plugins_ tab, scroll down to _Third party source_ and select _22Tracks_.
+tracks from 22tracks. To install, use the settings page of Logitech Media server.
+Go to the _Plugins_ tab, scroll down to _Third party source_ and select _22tracks_.
 Press the _Apply_ button and restart LMS.
 
 The plugin is included as a default third party resource. It is distributed via my
