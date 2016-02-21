@@ -274,7 +274,7 @@ sub _makeMetadata {
         artist => $json->{'artist'},
         album => $json->{'original_genre'}->{'title'},
         play => "tracks22://" . $json->{'id'},
-        bitrate => '128kbps CBR',
+        bitrate => '128kbps VBR',
         type => 'MP3 (22tracks)',
         on_select => 'play',
         icon => $icon,

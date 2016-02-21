@@ -52,7 +52,7 @@ sub _makeMetadata {
         album => $json->{'track'}->{'original_genre'}->{'title'},
         link => $realURL,
         play => "tracks22://" . $json->{'id'},
-        bitrate => '128kbps CBR',
+        bitrate => '128kbps VBR',
         type => 'MP3 (22tracks)',
         icon => $icon,
         image => $icon,
