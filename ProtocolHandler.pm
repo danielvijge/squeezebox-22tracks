@@ -26,8 +26,9 @@ use Scalar::Util qw(blessed);
 
 # Defines the timeout in seconds for a http request
 use constant HTTP_TIMEOUT => 15;
-use constant API_BASE_URL => 'http://22tracks.com/api/';
+
 use constant BASE_URL => 'http://22tracks.com/';
+use constant API_BASE_URL => BASE_URL . 'api/';
 use constant TOKEN_URL => 'http://app01.22tracks.com/token.php?desktop=true&u=/128/%s';
 use constant AUDIO_URL => 'http://audio.22tracks.com%s?st=%s&e=%s';
 
@@ -35,15 +36,24 @@ my $log   = logger('plugin.22tracks');
 
 use Data::Dumper;
 
-Slim::Player::ProtocolHandlers->registerHandler('tracks22', __PACKAGE__);
+Slim::Player::ProtocolHandlers->registerHandler('22tracks', __PACKAGE__);
 
 sub canSeek { 1 }
 
 sub _makeMetadata {
     my ($json, $realURL) = @_;
 
-    $icon = getIcon($json);
+    $icon = getIcon($json);  
     
+    for my $shoplink ($json->{'track'}->{'shoplinks'}[0]) {
+        if ($shoplink->{'shop_id'} eq '1') {
+            $download = $shoplink->{'shop_url'};
+        }
+        elsif ($shoplink->{'shop_id'} eq '5') {
+            $soundcloud = $shoplink->{'shop_url'};
+        }
+    }
+
     my $DATA = {
         duration => int($json->{'track'}->{'duration'}),
         name => $json->{'track'}->{'title'},
@@ -51,14 +61,22 @@ sub _makeMetadata {
         artist => $json->{'track'}->{'artist'},
         album => $json->{'track'}->{'original_genre'}->{'title'},
         link => $realURL,
-        play => "tracks22://" . $json->{'id'},
+        play => "22tracks:track:" . $json->{'id'},
         bitrate => '128kbps VBR',
         type => 'MP3 (22tracks)',
         icon => $icon,
         image => $icon,
         cover => $icon,
         bio => $json->{'track'}->{'bio'},
-        playlist_info => $json->{'genre'}->{'description_html'}
+        biolinks => {'homepage' => $json->{'track'}->{'site_url'},
+                        'facebook' => $json->{'track'}->{'facebook'},
+                        'twitter' => $json->{'track'}->{'twitter'},
+                        'soundcloud' => $soundcloud,
+                        'download' => $download },
+        playlist_info => $json->{'genre'}->{'description_html'},
+        playlistlinks => {'homepage' => $json->{'genre'}->{'site_url'},
+                        'facebook' => $json->{'genre'}->{'facebook_url'},
+                        'twitter' => $json->{'genre'}->{'twitter'} }
     };
 }
 
@@ -144,7 +162,7 @@ sub getNextTrack {
     my $url    = $song->currentTrack()->url;
         
     # Get next track
-    my ($id) = $url =~ m{^tracks22://(.*)$};
+    my ($id) = $url =~ m{^22tracks:track:(.+)$};
         
     my $trackURL = API_BASE_URL . 'track/' . $id;
     $log->debug("Track URL $trackURL");
@@ -201,7 +219,7 @@ sub getMetadataFor {
     my $cache = Slim::Utils::Cache->new;
 
     # If metadata is not here, fetch it so the next poll will include the data
-    my ($trackId) = $url =~ m{tracks22://(.+)};
+    my ($trackId) = $url =~ m{^22tracks:track:(.+)$};
     my $meta      = $cache->get( '22tracks_meta_' . $trackId );
 
     return $meta || {

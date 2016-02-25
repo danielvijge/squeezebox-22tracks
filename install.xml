@@ -3,7 +3,7 @@
 <extension>
 	<name>PLUGIN_22TRACKS</name>
 	<module>Plugins::22tracks::Plugin</module>
-	<version>0.1.2</version>
+	<version>0.2.0</version>
 	<description>PLUGIN_22TRACKS_DESC</description>
 	<icon>plugins/22tracks/icon.png</icon>
 	<defaultState>enabled</defaultState>

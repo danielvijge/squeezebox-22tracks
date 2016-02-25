@@ -28,8 +28,8 @@ use Plugins::22tracks::ProtocolHandler;
 # Defines the timeout in seconds for a http request
 use constant HTTP_TIMEOUT => 15;
 
-use constant API_BASE_URL => 'http://22tracks.com/api/';
 use constant BASE_URL => 'http://22tracks.com/';
+use constant API_BASE_URL => BASE_URL . 'api/';
 
 my $log;
 my $compat;
@@ -69,7 +69,7 @@ sub initPlugin {
 
     # Initialize the plugin with the given values. The 'feed' is the first
     # method called. The available menu entries will be shown in the new 
-    # menu entry 'soundclound'. 
+    # menu entry '22tracks'. 
     $class->SUPER::initPlugin(
         feed   => \&toplevel,
         tag    => '22tracks',
@@ -84,19 +84,19 @@ sub initPlugin {
     }
 
     Slim::Formats::RemoteMetadata->registerProvider(
-        match => qr/22tracks\.com/,
-        func => \&metadata_provider,
+        match => qr/22tracks:/,
+        func => \&remoteMetadataProvider,
     );
 
     Slim::Player::ProtocolHandlers->registerHandler(
-        tracks22 => 'Plugins::22tracks::ProtocolHandler'
+        '22tracks' => 'Plugins::22tracks::ProtocolHandler'
     );
 
-    Slim::Menu::TrackInfo->registerInfoProvider( tracks22bio => (
+    Slim::Menu::TrackInfo->registerInfoProvider( '22tracksbio' => (
         func  => \&trackInfoMenuBio,
     ) );
 
-    Slim::Menu::TrackInfo->registerInfoProvider( tracks22playlist => (
+    Slim::Menu::TrackInfo->registerInfoProvider( '22tracksplaylistinfo' => (
         func  => \&trackInfoMenuPlaylist,
     ) );
 }
@@ -131,7 +131,7 @@ sub _feedHandler {
     my $hide = exists $passDict->{'hide'} ? $passDict->{'hide'} : "-1";
     my $allcities = exists $passDict->{'allcities'} ? $passDict->{'allcities'} : "0";
     my $icon = exists $passDict->{'icon'} ? $passDict->{'icon'} : '';
-    my $playlist_info = exists $passDict->{'playlist_info'} ? $passDict->{'playlist_info'} : '';
+    my $playlist = exists $passDict->{'playlist'} ? $passDict->{'playlist'} : '';
 
     my $queryUrl = API_BASE_URL;
 
@@ -159,7 +159,7 @@ sub _feedHandler {
                     _parseGenres($json, $menu, $allcities);
                 }
                 elsif ($resource eq 'tracks') {
-                    _parseTracks($json, $menu, $icon, $playlist_info);
+                    _parseTracks($json, $menu, $playlist);
                 }
 
                 $callback->({
@@ -230,7 +230,7 @@ sub _parseGenre {
             image => $icon,
             type => 'playlist',
             url => \&_feedHandler,
-            passthrough => [ { resource => 'tracks', id => $json->{'id'}, icon => $icon, playlist_info => $json->{'description_html'} } ]
+            passthrough => [ { resource => 'tracks', id => $json->{'id'}, playlist=> $json } ]
         };
     }
     else {
@@ -257,23 +257,37 @@ sub getIcon {
 }
 
 sub _parseTracks {
-    my ($json, $menu, $icon, $playlist_info) = @_;
+    my ($json, $menu, $playlist) = @_;
 
     for my $entry (@$json) {
-        push @$menu, _makeMetadata($entry, $icon, $playlist_info);
+        push @$menu, _makeMetadata($entry, $playlist);
     }
 }
 
 sub _makeMetadata {
-    my ($json, $icon, $playlist_info) = @_;
-    
+    my ($json, $playlist) = @_;
+
+    my $icon = getIcon($playlist);
+
+    my $soundcloud = '';
+    my $download = '';
+
+    for my $shoplink ($json->{'shoplinks'}[0]) {
+        if ($shoplink->{'shop_id'} eq '1') {
+            $download = $shoplink->{'shop_url'};
+        }
+        elsif ($shoplink->{'shop_id'} eq '5') {
+            $soundcloud = $shoplink->{'shop_url'};
+        }
+    }
+
     my $DATA = {
         duration => int($json->{'duration'}),
         name => $json->{'title'},
         title => $json->{'title'},
         artist => $json->{'artist'},
         album => $json->{'original_genre'}->{'title'},
-        play => "tracks22://" . $json->{'id'},
+        play => "22tracks:track:" . $json->{'id'},
         bitrate => '128kbps VBR',
         type => 'MP3 (22tracks)',
         on_select => 'play',
@@ -281,7 +295,16 @@ sub _makeMetadata {
         image => $icon,
         cover => $icon,
         bio => $json->{'bio'},
-        playlist_info => $playlist_info
+        biolinks => {'homepage' => $json->{'site_url'},
+                        'facebook' => $json->{'facebook'},
+                        'twitter' => $json->{'twitter'},
+                        'soundcloud' => $soundcloud,
+                        'download' => $download },
+        playlist_info => $playlist->{'description_html'},
+        playlistlinks => {'homepage' => $playlist->{'site_url'},
+                        'facebook' => $playlist->{'facebook_url'},
+                        'twitter' => $playlist->{'twitter'} }
+
     };
 
     # Already set meta cache here, so that playlist does not have to
@@ -303,28 +326,109 @@ sub defaultMeta {
     };
 }
 
+sub remoteMetadataProvider {
+    my ( $client, $url ) = @_;
+
+    return unless $url =~ m{^22tracks:};
+
+    my ($id) = $url =~ m{^22tracks:track:(.+)$};
+    
+    my $cache = Slim::Utils::Cache->new;
+    my $meta = $cache->get( '22tracks_meta_' . $id );
+
+    return $meta if $meta;
+    
+    my $trackURL = API_BASE_URL . 'track/' . $id;
+    Slim::Networking::SimpleAsyncHTTP->new(
+        sub {
+            my $http = shift;
+            my $json = eval { from_json($http->content) };
+            
+            my $meta = _makeMetadata($json->{'track'}, $json->{'genre'});
+            my $cache = Slim::Utils::Cache->new;
+            
+            $cache->set( '22tracks_meta_' . $json->{'track'}->{'id'}, $meta, 86400 );
+
+            $http->params->{callback}->();
+        },
+        sub {
+            $log->warn('Could net get tracks information for remote track');
+        },
+        {
+            timeout       => HTTP_TIMEOUT,
+        },
+    )->get( $trackURL );
+
+    return { type => 'MP3 (22tracks)' };
+}
+
 sub trackInfoMenuBio {
     my ($client, $url, $track, $meta) = @_;
     
     return unless $client;
-    return unless $url =~ m{^tracks22://};
+    return unless $url =~ m{^22tracks:};
 
-    my @menuBio;
+    my @menu;
     my $item;
 
     if ($meta->{'bio'}) {
-        push @menuBio, {
-                name        => $meta->{'bio'},
+        push @menu, {
+                name        => controllerCapabilities($client)==2 ? $meta->{'bio'} : strip_tags($meta->{'bio'}),
                 type        => 'textarea',
                 favorites   => 0,
         };
-        
-        if (scalar @menuBio) {
-            $item = {
-                name  => string('PLUGIN_22TRACKS_BIO'),
-                items => \@menuBio,
-            };
-        }
+    }
+
+    if ($meta->{'biolinks'}->{'homepage'} && controllerCapabilities($client)) {
+        push @menu, {
+                name        => string('PLUGIN_22TRACKS_LINK_HOMEPAGE'),
+                type        => 'text',
+                favorites   => 0,
+                weblink     => $meta->{'biolinks'}->{'homepage'},
+        };
+    }
+
+    if ($meta->{'biolinks'}->{'facebook'} && controllerCapabilities($client)) {
+        push @menu, {
+                name        => string('PLUGIN_22TRACKS_LINK_FACEBOOK'),
+                type        => 'text',
+                favorites   => 0,
+                weblink     => $meta->{'biolinks'}->{'facebook'},
+        };
+    }
+
+    if ($meta->{'biolinks'}->{'twitter'} && controllerCapabilities($client)) {
+        push @menu, {
+                name        => string('PLUGIN_22TRACKS_LINK_TWITTER'),
+                type        => 'text',
+                favorites   => 0,
+                weblink     => 'https://www.twitter.com/' . $meta->{'biolinks'}->{'twitter'},
+        };
+    }
+
+    if ($meta->{'biolinks'}->{'soundcloud'} && controllerCapabilities($client)) {
+        push @menu, {
+                name        => string('PLUGIN_22TRACKS_LINK_SOUNDCLOUD'),
+                type        => 'text',
+                favorites   => 0,
+                weblink     => $meta->{'biolinks'}->{'soundcloud'},
+        };
+    }
+
+    if ($meta->{'biolinks'}->{'download'} && controllerCapabilities($client)) {
+        push @menu, {
+                name        => string('PLUGIN_22TRACKS_LINK_DOWNLOAD'),
+                type        => 'text',
+                favorites   => 0,
+                weblink     => $meta->{'biolinks'}->{'download'},
+        };
+    }
+    
+    if (scalar @menu) {
+        $item = {
+            name  => string('PLUGIN_22TRACKS_BIO'),
+            items => \@menu,
+        };
     }
 
     return $item;
@@ -334,27 +438,75 @@ sub trackInfoMenuPlaylist {
     my ($client, $url, $track, $meta) = @_;
     
     return unless $client;
-    return unless $url =~ m{^tracks22://};
+    return unless $url =~ m{^22tracks:};
 
-    my @menuPlaylist;
+    my @menu;
     my $item;
 
     if ($meta->{'playlist_info'}) {
-        push @menuPlaylist, {
-                name        => $meta->{'playlist_info'},
+        push @menu, {
+                name        => controllerCapabilities($client)==2 ? $meta->{'playlist_info'} : strip_tags($meta->{'playlist_info'}),
                 type        => 'textarea',
                 favorites   => 0,
         };
-        
-        if (scalar @menuPlaylist) {
-            $item = {
-                name  => string('PLUGIN_22TRACKS_PLAYLIST_INFO'),
-                items => \@menuPlaylist,
-            };
-        }
+    }
+
+    if ($meta->{'playlistlinks'}->{'homepage'} && controllerCapabilities($client)) {
+        push @menu, {
+                name        => string('PLUGIN_22TRACKS_LINK_HOMEPAGE'),
+                type        => 'text',
+                favorites   => 0,
+                weblink     => $meta->{'playlistlinks'}->{'homepage'},
+        };
+    }
+
+    if ($meta->{'playlistlinks'}->{'facebook'} && controllerCapabilities($client)) {
+        push @menu, {
+                name        => string('PLUGIN_22TRACKS_LINK_FACEBOOK'),
+                type        => 'text',
+                favorites   => 0,
+                weblink     => $meta->{'playlistlinks'}->{'facebook'},
+        };
+    }
+
+    if ($meta->{'playlistlinks'}->{'twitter'} && controllerCapabilities($client)) {
+        push @menu, {
+                name        => string('PLUGIN_22TRACKS_LINK_TWITTER'),
+                type        => 'text',
+                favorites   => 0,
+                weblink     => 'https://www.twitter.com/' . $meta->{'playlistlinks'}->{'twitter'},
+        };
+    }
+    
+    if (scalar @menu) {
+        $item = {
+            name  => string('PLUGIN_22TRACKS_PLAYLIST_INFO'),
+            items => \@menu,
+        };
     }
 
     return $item;
+}
+
+sub strip_tags {
+    my $html = shift;
+
+    $html =~ s/<(?:[^>'"]*|(['"]).*?\1)*>//gs;
+    return $html;
+}
+
+sub controllerCapabilities {
+    my $client = shift;
+
+    if (!defined $client->controllerUA) {
+        return 2;
+    }
+    elsif ($client->controllerUA =~ qr/NoAppsWithWebLinks/i) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }
 
 # Always end with a 1 to make Perl happy
