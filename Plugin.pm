@@ -439,7 +439,7 @@ sub trackInfoMenuBio {
         };
     }
 
-    if (controllerCapabilities($client)==1) {
+    if (controllerCapabilities($client)==1 && ($meta->{'playlistlinks'}->{'homepage'} || $meta->{'playlistlinks'}->{'facebook'} || $meta->{'playlistlinks'}->{'twitter'} || $meta->{'biolinks'}->{'soundcloud'} || $meta->{'biolinks'}->{'download'})) {
         push @menu, {
                 name        => string('PLUGIN_22TRACKS_LINK'),
                 type        => 'text',
@@ -515,7 +515,7 @@ sub trackInfoMenuPlaylist {
         };
     }
 
-    if (controllerCapabilities($client)==1) {
+    if (controllerCapabilities($client)==1 && ($meta->{'playlistlinks'}->{'homepage'} || $meta->{'playlistlinks'}->{'facebook'} || $meta->{'playlistlinks'}->{'twitter'})) {
         push @menu, {
                 name        => string('PLUGIN_22TRACKS_LINK'),
                 type        => 'text',
