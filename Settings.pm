@@ -9,7 +9,48 @@ package Plugins::22tracks::Settings;
 use strict;
 use base qw(Slim::Web::Settings);
 
+use JSON::XS::VersionOneAndTwo;
+
+use Slim::Utils::Log;
 use Slim::Utils::Prefs;
+
+my $log   = logger('plugin.22tracks');
+
+use constant HTTP_TIMEOUT => 15;
+use constant HTTP_CACHE => 1;
+use constant HTTP_EXPIRES => '1h';
+
+use constant BASE_URL => 'http://22tracks.com/';
+use constant API_BASE_URL => BASE_URL . 'api/';
+
+sub handler {
+    my ($class, $client, $params) = @_;
+
+    $params->{'locations'} = {
+        "0" => "All locations"
+    };
+
+    Slim::Networking::SimpleAsyncHTTP->new(
+        sub {
+            my ($http)  = @_;
+            my $json  = eval { from_json($http->content) };
+
+            for my $entry (@$json) {
+                $params->{'locations'}->{$entry->{'id'}} = $entry->{'title'};
+            }
+        },
+        sub {
+            $log->warn('Error retrieving cities from remote server');
+        },
+        {
+            timeout  => HTTP_TIMEOUT,
+            cache    => HTTP_CACHE,
+            expires  => HTTP_EXPIRES,
+        },
+    )->get( API_BASE_URL . 'cities' );
+
+    return $class->SUPER::handler($client, $params);
+}
 
 # Returns the name of the plugin. The real 
 # string is specified in the strings.txt file.
