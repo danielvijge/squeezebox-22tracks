@@ -459,9 +459,6 @@ sub trackInfoMenuBio {
                     },
                 },
         };
-
-        use Data::Dumper;
-        $log->debug(Dumper($meta->{'biolinks'}));
     }
     
     if (scalar @menu) {
