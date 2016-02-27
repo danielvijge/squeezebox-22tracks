@@ -27,6 +27,8 @@ use Plugins::22tracks::ProtocolHandler;
 
 # Defines the timeout in seconds for a http request
 use constant HTTP_TIMEOUT => 15;
+use constant HTTP_CACHE => 1;
+use constant HTTP_EXPIRES => '1h';
 
 use constant BASE_URL => 'http://22tracks.com/';
 use constant API_BASE_URL => BASE_URL . 'api/';
@@ -99,6 +101,11 @@ sub initPlugin {
     Slim::Menu::TrackInfo->registerInfoProvider( '22tracksplaylistinfo' => (
         func  => \&trackInfoMenuPlaylist,
     ) );
+
+    Slim::Control::Request::addDispatch(['22tracks', 'bio'], 
+        [1, 1, 1, \&cliInfoQuery]);
+    Slim::Control::Request::addDispatch(['22tracks', 'playlistinfo'], 
+        [1, 1, 1, \&cliInfoQuery]);
 }
 
 # Called when the plugin is stopped
@@ -172,6 +179,11 @@ sub _feedHandler {
                 $log->warn("error: $_[1]");
                 $callback->([ { name => $_[1], type => 'text' } ]);
             },
+            {
+                timeout       => HTTP_TIMEOUT,
+                cache         => HTTP_CACHE,
+                expires       => HTTP_EXPIRES,
+            }
             
         )->get($queryUrl);
     };
@@ -272,11 +284,12 @@ sub _makeMetadata {
     my $soundcloud = '';
     my $download = '';
 
-    for my $shoplink ($json->{'shoplinks'}[0]) {
-        if ($shoplink->{'shop_id'} eq '1') {
+    my $shoplinks = $json->{'shoplinks'};
+    for my $shoplink (@$shoplinks) {
+        if ($shoplink->{'title'} =~ qr/download/i) {
             $download = $shoplink->{'shop_url'};
         }
-        elsif ($shoplink->{'shop_id'} eq '5') {
+        elsif ($shoplink->{'title'} =~ qr/soundcloud/i) {
             $soundcloud = $shoplink->{'shop_url'};
         }
     }
@@ -300,7 +313,7 @@ sub _makeMetadata {
                         'twitter' => $json->{'twitter'},
                         'soundcloud' => $soundcloud,
                         'download' => $download },
-        playlist_info => $playlist->{'description_html'},
+        playlistinfo => $playlist->{'description_html'},
         playlistlinks => {'homepage' => $playlist->{'site_url'},
                         'facebook' => $playlist->{'facebook_url'},
                         'twitter' => $playlist->{'twitter'} }
@@ -356,6 +369,8 @@ sub remoteMetadataProvider {
         },
         {
             timeout       => HTTP_TIMEOUT,
+            cache         => HTTP_CACHE,
+            expires       => HTTP_EXPIRES,
         },
     )->get( $trackURL );
 
@@ -379,7 +394,7 @@ sub trackInfoMenuBio {
         };
     }
 
-    if ($meta->{'biolinks'}->{'homepage'} && controllerCapabilities($client)) {
+    if ($meta->{'biolinks'}->{'homepage'} && controllerCapabilities($client)==2) {
         push @menu, {
                 name        => string('PLUGIN_22TRACKS_LINK_HOMEPAGE'),
                 type        => 'text',
@@ -388,7 +403,7 @@ sub trackInfoMenuBio {
         };
     }
 
-    if ($meta->{'biolinks'}->{'facebook'} && controllerCapabilities($client)) {
+    if ($meta->{'biolinks'}->{'facebook'} && controllerCapabilities($client)==2) {
         push @menu, {
                 name        => string('PLUGIN_22TRACKS_LINK_FACEBOOK'),
                 type        => 'text',
@@ -397,7 +412,7 @@ sub trackInfoMenuBio {
         };
     }
 
-    if ($meta->{'biolinks'}->{'twitter'} && controllerCapabilities($client)) {
+    if ($meta->{'biolinks'}->{'twitter'} && controllerCapabilities($client)==2) {
         push @menu, {
                 name        => string('PLUGIN_22TRACKS_LINK_TWITTER'),
                 type        => 'text',
@@ -406,7 +421,7 @@ sub trackInfoMenuBio {
         };
     }
 
-    if ($meta->{'biolinks'}->{'soundcloud'} && controllerCapabilities($client)) {
+    if ($meta->{'biolinks'}->{'soundcloud'} && controllerCapabilities($client)==2) {
         push @menu, {
                 name        => string('PLUGIN_22TRACKS_LINK_SOUNDCLOUD'),
                 type        => 'text',
@@ -415,13 +430,38 @@ sub trackInfoMenuBio {
         };
     }
 
-    if ($meta->{'biolinks'}->{'download'} && controllerCapabilities($client)) {
+    if ($meta->{'biolinks'}->{'download'} && controllerCapabilities($client)==2) {
         push @menu, {
                 name        => string('PLUGIN_22TRACKS_LINK_DOWNLOAD'),
                 type        => 'text',
                 favorites   => 0,
                 weblink     => $meta->{'biolinks'}->{'download'},
         };
+    }
+
+    if (controllerCapabilities($client)==1) {
+        push @menu, {
+                name        => string('PLUGIN_22TRACKS_LINK'),
+                type        => 'text',
+                favorites   => 0,
+                jive => {
+                    actions => {
+                        go => {
+                            cmd => [ '22tracks', 'bio' ],
+                            params => {
+                                '22tracks_homepage' => $meta->{'biolinks'}->{'homepage'},
+                                '22tracks_facebook' => $meta->{'biolinks'}->{'facebook'},
+                                '22tracks_twitter' => $meta->{'biolinks'}->{'twitter'},
+                                '22tracks_soundcloud' => $meta->{'biolinks'}->{'soundcloud'},
+                                '22tracks_download' => $meta->{'biolinks'}->{'download'}
+                            },
+                        },
+                    },
+                },
+        };
+
+        use Data::Dumper;
+        $log->debug(Dumper($meta->{'biolinks'}));
     }
     
     if (scalar @menu) {
@@ -443,15 +483,15 @@ sub trackInfoMenuPlaylist {
     my @menu;
     my $item;
 
-    if ($meta->{'playlist_info'}) {
+    if ($meta->{'playlistinfo'}) {
         push @menu, {
-                name        => controllerCapabilities($client)==2 ? $meta->{'playlist_info'} : strip_tags($meta->{'playlist_info'}),
+                name        => controllerCapabilities($client)==2 ? $meta->{'playlistinfo'} : strip_tags($meta->{'playlistinfo'}),
                 type        => 'textarea',
                 favorites   => 0,
         };
     }
 
-    if ($meta->{'playlistlinks'}->{'homepage'} && controllerCapabilities($client)) {
+    if ($meta->{'playlistlinks'}->{'homepage'} && controllerCapabilities($client)==2) {
         push @menu, {
                 name        => string('PLUGIN_22TRACKS_LINK_HOMEPAGE'),
                 type        => 'text',
@@ -460,7 +500,7 @@ sub trackInfoMenuPlaylist {
         };
     }
 
-    if ($meta->{'playlistlinks'}->{'facebook'} && controllerCapabilities($client)) {
+    if ($meta->{'playlistlinks'}->{'facebook'} && controllerCapabilities($client)==2) {
         push @menu, {
                 name        => string('PLUGIN_22TRACKS_LINK_FACEBOOK'),
                 type        => 'text',
@@ -469,12 +509,32 @@ sub trackInfoMenuPlaylist {
         };
     }
 
-    if ($meta->{'playlistlinks'}->{'twitter'} && controllerCapabilities($client)) {
+    if ($meta->{'playlistlinks'}->{'twitter'} && controllerCapabilities($client)==2) {
         push @menu, {
                 name        => string('PLUGIN_22TRACKS_LINK_TWITTER'),
                 type        => 'text',
                 favorites   => 0,
                 weblink     => 'https://www.twitter.com/' . $meta->{'playlistlinks'}->{'twitter'},
+        };
+    }
+
+    if (controllerCapabilities($client)==1) {
+        push @menu, {
+                name        => string('PLUGIN_22TRACKS_LINK'),
+                type        => 'text',
+                favorites   => 0,
+                jive => {
+                    actions => {
+                        go => {
+                            cmd => [ '22tracks', 'playlistinfo' ],
+                            params => {
+                                '22tracks_homepage' => $meta->{'playlistlinks'}->{'homepage'},
+                                '22tracks_facebook' => $meta->{'playlistlinks'}->{'facebook'},
+                                '22tracks_twitter' => $meta->{'playlistlinks'}->{'twitter'}
+                            },
+                        },
+                    },
+                },
         };
     }
     
@@ -495,18 +555,70 @@ sub strip_tags {
     return $html;
 }
 
+# return controller capabilities for displaying HTML and/or weblinks
+# 2: controller can display HTML and weblinks
+# 1: controller can display weblinks, not HTML
+# 0: controller cannot display HTML or weblinks
 sub controllerCapabilities {
     my $client = shift;
 
     if (!defined $client->controllerUA) {
         return 2;
     }
-    elsif ($client->controllerUA =~ qr/NoAppsWithWebLinks/i) {
+    elsif ($client->controllerUA =~ qr/iPeng/i) {
         return 1;
     }
     else {
         return 0;
     }
+}
+
+# special query to allow weblink to be sent to iPeng
+sub cliInfoQuery {
+    my $request = shift;
+
+    if ($request->isNotQuery([['22tracks'], ['bio', 'playlistinfo']])) {
+        $request->setStatusBadDispatch();
+        return;
+    }
+
+    my $homepage = $request->getParam('22tracks_homepage');
+    my $facebook = $request->getParam('22tracks_facebook');
+    my $twitter = $request->getParam('22tracks_twitter');
+    my $soundcloud = $request->getParam('22tracks_soundcloud');
+    my $download = $request->getParam('22tracks_download');
+    my $i = 0;
+
+    if ($homepage) {
+        $request->addResultLoop('item_loop', $i, 'text', string('PLUGIN_22TRACKS_LINK_HOMEPAGE'));
+        $request->addResultLoop('item_loop', $i, 'weblink', $homepage);
+        $i++;
+    }
+    if ($facebook) {
+        $request->addResultLoop('item_loop', $i, 'text', string('PLUGIN_22TRACKS_LINK_FACEBOOK'));
+        $request->addResultLoop('item_loop', $i, 'weblink', $facebook);
+        $i++;
+    }
+    if ($twitter) {
+        $request->addResultLoop('item_loop', $i, 'text', string('PLUGIN_22TRACKS_LINK_TWITTER'));
+        $request->addResultLoop('item_loop', $i, 'weblink', 'https://www.twitter.com/' . $twitter);
+        $i++;
+    }
+    if ($soundcloud) {
+        $request->addResultLoop('item_loop', $i, 'text', string('PLUGIN_22TRACKS_LINK_SOUNDCLOUD'));
+        $request->addResultLoop('item_loop', $i, 'weblink', $soundcloud);
+        $i++;
+    }
+    if ($download) {
+        $request->addResultLoop('item_loop', $i, 'text', string('PLUGIN_22TRACKS_LINK_DOWNLOAD'));
+        $request->addResultLoop('item_loop', $i, 'weblink', $download);
+        $i++;
+    }
+    
+    $request->addResult('count', $i);
+    $request->addResult('offset', 0);
+
+    $request->setStatusDone();
 }
 
 # Always end with a 1 to make Perl happy

@@ -26,6 +26,8 @@ use Scalar::Util qw(blessed);
 
 # Defines the timeout in seconds for a http request
 use constant HTTP_TIMEOUT => 15;
+use constant HTTP_CACHE => 1;
+use constant HTTP_EXPIRES => '1h';
 
 use constant BASE_URL => 'http://22tracks.com/';
 use constant API_BASE_URL => BASE_URL . 'api/';
@@ -45,11 +47,15 @@ sub _makeMetadata {
 
     $icon = getIcon($json);  
     
-    for my $shoplink ($json->{'track'}->{'shoplinks'}[0]) {
-        if ($shoplink->{'shop_id'} eq '1') {
+    my $download = '';
+    my $soundcloud = '';
+
+    my $shoplinks = $json->{'track'}->{'shoplinks'};
+    for my $shoplink (@$shoplinks) {
+        if ($shoplink->{'title'} =~ qr/download/i) {
             $download = $shoplink->{'shop_url'};
         }
-        elsif ($shoplink->{'shop_id'} eq '5') {
+        elsif ($shoplink->{'title'} =~ qr/soundcloud/i) {
             $soundcloud = $shoplink->{'shop_url'};
         }
     }
@@ -73,7 +79,7 @@ sub _makeMetadata {
                         'twitter' => $json->{'track'}->{'twitter'},
                         'soundcloud' => $soundcloud,
                         'download' => $download },
-        playlist_info => $json->{'genre'}->{'description_html'},
+        playlistinfo => $json->{'genre'}->{'description_html'},
         playlistlinks => {'homepage' => $json->{'genre'}->{'site_url'},
                         'facebook' => $json->{'genre'}->{'facebook_url'},
                         'twitter' => $json->{'genre'}->{'twitter'} }
@@ -144,6 +150,8 @@ sub gotNextTrack {
         {
             song          => $song,
             timeout       => HTTP_TIMEOUT,
+            cache         => HTTP_CACHE,
+            expires       => HTTP_EXPIRES,
         },
     )->get( $tokenURL );
 }
@@ -176,6 +184,8 @@ sub getNextTrack {
             callback      => $successCb,
             errorCallback => $errorCb,
             timeout       => HTTP_TIMEOUT,
+            cache         => HTTP_CACHE,
+            expires       => HTTP_EXPIRES,
         },
     )->get( $trackURL );
 }
