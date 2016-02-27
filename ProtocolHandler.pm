@@ -38,8 +38,6 @@ my $log   = logger('plugin.22tracks');
 my $prefs = preferences('plugin.22tracks');
 $prefs->init({ defaultCity => '0', scrobble => '0' });
 
-use Data::Dumper;
-
 Slim::Player::ProtocolHandlers->registerHandler('22tracks', __PACKAGE__);
 
 sub canSeek { 1 }
