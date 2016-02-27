@@ -5,7 +5,8 @@ VERSION=$(grep \<version\> install.xml  | perl -n -e '/>(.*)</; print $1;')
 
 cd ..
 mv squeezebox-22tracks 22tracks
-zip -r squeezebox-22tracks-$VERSION.zip 22tracks -x \*.zip \*.sh \*.git\* \*README\* \*webauth\*
+rm squeezebox-22tracks-$VERSION.zip
+zip -r squeezebox-22tracks-$VERSION.zip 22tracks -x \*.zip \*.sh \*.git\* \*README\* \*sublime-\* \*.DS_Store\*
 mv 22tracks squeezebox-22tracks
 SHA=$(shasum squeezebox-22tracks-$VERSION.zip | awk '{print $1;}')
 
