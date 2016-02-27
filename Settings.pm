@@ -17,7 +17,7 @@ use Slim::Utils::Log;
 
 my $log   = logger('plugin.22tracks');
 my $prefs = preferences('plugin.22tracks');
-$prefs->init({ defaultCity => '0' });
+$prefs->init({ defaultCity => '0', scrobble => '0' });
 
 use constant HTTP_TIMEOUT => 15;
 use constant HTTP_CACHE => 1;
@@ -47,8 +47,8 @@ sub handler {
         sub {
             $log->warn('Could not retrieve list of cities');
             # Add current default city to list so it is not overwritten
-            if ($prefs->{'prefs'}->{'defaultCity'} ne '0') {
-                $params->{'locations'}->{$prefs->{'prefs'}->{'defaultCity'}} = string('PLUGIN_22TRACKS_DEFAULT_CITY');
+            if ($prefs->get('defaultCity') ne '0') {
+                $params->{'locations'}->{$prefs->get('defaultCity')} = string('PLUGIN_22TRACKS_DEFAULT_CITY');
             }
             return $callback->($client, $params, $class->SUPER::handler($client, $params), @args);
         },
@@ -73,7 +73,7 @@ sub page {
 }
 
 sub prefs {
-    return (preferences('plugin.22tracks'), qw(defaultCity));
+    return (preferences('plugin.22tracks'), qw(defaultCity scrobble));
 }
 
 # Always end with a 1 to make Perl happy

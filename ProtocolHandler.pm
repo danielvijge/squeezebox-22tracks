@@ -35,6 +35,8 @@ use constant TOKEN_URL => 'http://app01.22tracks.com/token.php?desktop=true&u=/1
 use constant AUDIO_URL => 'http://audio.22tracks.com%s?st=%s&e=%s';
 
 my $log   = logger('plugin.22tracks');
+my $prefs = preferences('plugin.22tracks');
+$prefs->init({ defaultCity => '0', scrobble => '0' });
 
 use Data::Dumper;
 
@@ -107,6 +109,17 @@ sub getIcon {
 sub getFormatForURL () { 'mp3' }
 
 sub isRemote { 1 }
+
+# Source for AudioScrobbler
+sub audioScrobblerSource {
+        # P = Chosen by the user
+        if ($prefs->get('scrobble')) {
+            return 'P';
+        }
+        else {
+            return 'R';
+        }
+}
 
 sub scanUrl {
     my ($class, $url, $args) = @_;

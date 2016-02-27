@@ -42,3 +42,9 @@ PLUGIN_22TRACKS_LINK_SOUNDCLOUD
 
 PLUGIN_22TRACKS_LINK_DOWNLOAD
 	EN	Free download
+
+PLUGIN_22TRACKS_SCROBBLE
+	EN	Scrobble music from 22tracks
+
+PLUGIN_22TRACKS_SCROBBLE_DESC
+	EN	If checked, music from 22tracks will be scrobbled, even if scrobbling of internet radio is disabled in audioscrobbler settings

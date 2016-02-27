@@ -12,4 +12,8 @@
 
 	[% END %]
 
+    [% WRAPPER setting title="PLUGIN_22TRACKS_SCROBBLE" desc="PLUGIN_22TRACKS_SCROBBLE_DESC" %]
+        <input type="checkbox" class="stdedit" name="pref_scrobble"[% IF prefs.scrobble %] checked[% END %]>
+    [% END %]
+
 [% PROCESS settings/footer.html %]
