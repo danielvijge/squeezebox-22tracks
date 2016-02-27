@@ -17,7 +17,7 @@ use Slim::Utils::Log;
 
 my $log   = logger('plugin.22tracks');
 my $prefs = preferences('plugin.22tracks');
-$prefs->init({ defaultCity => '0', scrobble => '0' });
+$prefs->init({ defaultCity => '0', scrobble => '1' });
 
 use constant HTTP_TIMEOUT => 15;
 use constant HTTP_CACHE => 1;

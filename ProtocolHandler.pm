@@ -36,7 +36,7 @@ use constant AUDIO_URL => 'http://audio.22tracks.com%s?st=%s&e=%s';
 
 my $log   = logger('plugin.22tracks');
 my $prefs = preferences('plugin.22tracks');
-$prefs->init({ defaultCity => '0', scrobble => '0' });
+$prefs->init({ defaultCity => '0', scrobble => '1' });
 
 Slim::Player::ProtocolHandlers->registerHandler('22tracks', __PACKAGE__);
 

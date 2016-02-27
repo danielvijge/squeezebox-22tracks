@@ -39,7 +39,7 @@ my $compat;
 # Get the data related to this plugin and preset certain variables with 
 # default values in case they are not set
 my $prefs = preferences('plugin.22tracks');
-$prefs->init({ defaultCity => '0', scrobble => '0' });
+$prefs->init({ defaultCity => '0', scrobble => '1' });
 
 # This is the entry point in the script
 BEGIN {
