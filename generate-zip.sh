@@ -18,7 +18,7 @@ cat <<EOF > public.xml
 	<plugins>
 		<plugin name="22tracks" version="$VERSION" minTarget="7.5" maxTarget="*">
 			<title lang="EN">22tracks</title>
-			<desc lang="EN">Play music from 22tracks.com</desc>
+			<desc lang="EN">Curated playlists from 22tracks (Requires a Spotify Premium account)</desc>
 			<url>http://danielvijge.github.io/squeezebox-22tracks/squeezebox-22tracks-$VERSION.zip</url>
 			<link>https://github.com/danielvijge/squeezebox-22tracks</link>
 			<sha>$SHA</sha>

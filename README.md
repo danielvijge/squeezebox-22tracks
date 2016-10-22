@@ -1,7 +1,12 @@
 # A 22tracks plugin for Logitech SqueezeBox media server #
 
-This is a Logitech Media Server (LMS) (a.k.a Squeezebox server) plugin to play
-tracks from 22tracks. To install, use the settings page of Logitech Media server.
+This is a Logitech Media Server (LMS) (a.k.a Squeezebox server) plugin to browse
+Spotify playlists from 22tracks. It is not really needed, because a Squeezebox can
+already browse Spotify playlists. This plugin is there to make browsing those
+playlists a but easier, and to provide an upgrade path from the old plugin that
+streamed from 22tracks own web site, to the new implementation with Spotify streams.
+
+To install, use the settings page of Logitech Media server.
 Go to the _Plugins_ tab, scroll down to _Third party source_ and select _22tracks_.
 Press the _Apply_ button and restart LMS.
 
@@ -12,6 +17,10 @@ However, if you want to, you can add the repository directly. A new version migh
 earlier available in this repository:
     
     http://danielvijge.github.io/squeezebox-22tracks/public.xml
+
+The old version of this plugin is available in the brach _old-22tracks_. It is kept
+there because it is a nice example of a plugin that reads data from a JSON feed and
+plays tracks from a remote source.
 
 ## Licence ##
 
