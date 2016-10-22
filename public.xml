@@ -3,12 +3,12 @@
 		<title lang="EN">22tracks Plugin</title>
 	</details>
 	<plugins>
-		<plugin name="22tracks" version="0.2.0" minTarget="7.5" maxTarget="*">
+		<plugin name="22tracks" version="0.3.0" minTarget="7.5" maxTarget="*">
 			<title lang="EN">22tracks</title>
-			<desc lang="EN">Play music from 22tracks.com</desc>
-			<url>http://danielvijge.github.io/squeezebox-22tracks/squeezebox-22tracks-0.2.0.zip</url>
+			<desc lang="EN">Curated playlists from 22tracks (Requires a Spotify Premium account)</desc>
+			<url>http://danielvijge.github.io/squeezebox-22tracks/squeezebox-22tracks-0.3.0.zip</url>
 			<link>https://github.com/danielvijge/squeezebox-22tracks</link>
-			<sha>38e64381e5fa8ce1ef0425e825def9e8f00e64d4</sha>
+			<sha>2f7e2bdfb3f69493f4c22f4e13536abb705968f1</sha>
 			<creator>Daniel Vijge</creator>
 		</plugin>
 	</plugins>
