@@ -123,6 +123,10 @@ sub _parseSpotifyPlaylists {
         if (substr($entry->{'text'},0,4)=='22: ') {
             $text = substr($entry->{'text'},4);
         }
+        # Remove [22tracks] at the end of the title
+        if (index($text,' [22tracks]') != -1) {
+            $text = substr($text,0,index($text,' [22tracks]'));
+        }
         push @$menu, {
             name => $text  ,
             type => 'playlist',
